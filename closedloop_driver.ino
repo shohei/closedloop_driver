@@ -121,14 +121,20 @@ void setupTimer(){
 	TC->CTRLA.reg &= ~TCC_CTRLA_ENABLE;
 	while (TC->SYNCBUSY.bit.ENABLE == 1);
 
-  TC->CTRLA.reg |= TCC_CTRLA_PRESCALER_DIV1024;  // Set perscaler
+  // TC->CTRLA.reg |= TCC_CTRLA_PRESCALER_DIV1024;  // Set perscaler
+  TC->CTRLA.reg |= TCC_CTRLA_PRESCALER_DIV256;  // Set perscaler
 
   TC->WAVE.reg |= TCC_WAVE_WAVEGEN_NFRQ;
   while (TC->SYNCBUSY.bit.WAVE == 1);
 
   // TC->PER.reg = 0xB71B;  // Set counter Top using the PER register : 1s
   // TC->PER.reg = 0x124F;  // Set counter Top using the PER register : 10ms
-  TC->PER.reg = 0x1D4;  // Set counter Top using the PER register : 10ms
+  // TC->PER.reg = 0x1D4;  // Set counter Top using the PER register : 1ms
+  //In case pre-scaler is 256
+  // TC->PER.reg = 0x1D4;  // Set counter Top using the PER register : 250us
+  // TC->PER.reg = 0x2E;  // Set counter Top using the PER register : 25us
+  TC->PER.reg = 0x4;  // Set counter Top using the PER register : 2.5us
+
   while (TC->SYNCBUSY.bit.PER == 1)
 
   TC->CC[0].reg = 0xFFF;
