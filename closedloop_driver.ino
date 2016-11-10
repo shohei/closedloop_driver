@@ -13,7 +13,6 @@
 #define STAT_D (0<<3|1<<2|0<<1|1<<0)
 
 int pin_ovf_led = 13;
-unsigned int irq_ovf_count = 0;
 uint8_t ap,an,bp,bn;
 uint8_t current;
 uint8_t previous;
@@ -39,20 +38,17 @@ void setup(){
 	while (!SerialUSB) {};  
 	SerialUSB.println("init done.");
 	updateEncoder();
-    previous = ap<<3|an<<2|bp<<1|bn<<0; 	
+	previous = ap<<3|an<<2|bp<<1|bn<<0; 	
 }
 
 void loop(){
 	delay(1000);
-	// digitalWrite(pin_ovf_led,HIGH);
-	// delay(1000);
-	// digitalWrite(pin_ovf_led,LOW);
 	printCounter();
 }
 
 void printCounter(){
 	SerialUSB.print("counter: ");
-    SerialUSB.println(counter);
+	SerialUSB.println(counter);
 }
 
 void updateEncoder(){
@@ -65,48 +61,36 @@ void updateEncoder(){
 void decodeEncoder(){
 	updateEncoder();
 
-    current = ap<<3|an<<2|bp<<1|bn<<0; 	
-    // SerialUSB.print("current: ");
-    // SerialUSB.println(current,BIN);
-    // SerialUSB.print("previous: ");
-    // SerialUSB.println(previous,BIN);
+	current = ap<<3|an<<2|bp<<1|bn<<0; 	
 
-    if(current == STAT_A){
+	if(current == STAT_A){
     // 1001
-      if(previous == STAT_D){
-      	counter++;
-      	// printCounter();
-      } else if(previous == STAT_B){
-      	counter--;
-      	// printCounter();
-      }
-    } else if(current == STAT_B){
+    if(previous == STAT_D){
+    	counter++;
+    	} else if(previous == STAT_B){
+    		counter--;
+    	}
+    	} else if(current == STAT_B){
     // 1010
-      if(previous == STAT_A){
-      	counter++;
-      	// printCounter();
-      } else if(current == STAT_C){
-      	counter--;
-      	// printCounter();
-      }
-    } else if(current == STAT_C) {
+    if(previous == STAT_A){
+    	counter++;
+    	} else if(current == STAT_C){
+    		counter--;
+    	}
+    	} else if(current == STAT_C) {
     // 0110
-      if(previous == STAT_B){
-      	counter++;
-      	// printCounter();
-      } else if(previous == STAT_D){
-      	counter--;
-      	// printCounter();
-      }
-    } else if(current == STAT_D) {
+    if(previous == STAT_B){
+    	counter++;
+    	} else if(previous == STAT_D){
+    		counter--;
+    	}
+    	} else if(current == STAT_D) {
     // 0101
-      if(previous == STAT_C){
-      	counter++;
-      	// printCounter();
-      } else if(previous == STAT_A){
-      	counter--;
-      	// printCounter();
-      }
+    if(previous == STAT_C){
+    	counter++;
+    	} else if(previous == STAT_A){
+    		counter--;
+    	}
     }
     previous = current;
 }
@@ -127,9 +111,11 @@ void setupTimer(){
   TC->WAVE.reg |= TCC_WAVE_WAVEGEN_NFRQ;
   while (TC->SYNCBUSY.bit.WAVE == 1);
 
+  //In case pre-scaler is 1024
   // TC->PER.reg = 0xB71B;  // Set counter Top using the PER register : 1s
   // TC->PER.reg = 0x124F;  // Set counter Top using the PER register : 10ms
   // TC->PER.reg = 0x1D4;  // Set counter Top using the PER register : 1ms
+
   //In case pre-scaler is 256
   // TC->PER.reg = 0x1D4;  // Set counter Top using the PER register : 250us
   // TC->PER.reg = 0x2E;  // Set counter Top using the PER register : 25us
@@ -154,16 +140,15 @@ void setupTimer(){
 void TCC0_Handler()
 {
 	Tcc* TC = (Tcc*) TCC0;
-	if (TC->INTFLAG.bit.OVF == 1) {
-    // do something
-    decodeEncoder();
-    // digitalWrite(pin_ovf_led, irq_ovf_count % 2);  // for blink led
-    irq_ovf_count++;                               // for blink led
-    TC->INTFLAG.bit.OVF = 1;
-}
 
-if (TC->INTFLAG.bit.MC0 == 1) {
+	if (TC->INTFLAG.bit.OVF == 1) {
+    	// periodical processing
+    	decodeEncoder();
+    	TC->INTFLAG.bit.OVF = 1;
+    }
+
+    if (TC->INTFLAG.bit.MC0 == 1) {
 	TC->INTFLAG.bit.MC0 = 1;
-}
+    }
 }
 
