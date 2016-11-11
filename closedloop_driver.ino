@@ -1,14 +1,16 @@
 #include "lookuptable.h"
 #include <math.h>
 
+//Timer interrupt kills PWM pins 2,3,4,5,6,7
+
 //firmware output
-#define STP_PIN 6
-#define DIR_PIN 7
+#define STP_PIN 8
+#define DIR_PIN 9
 //output to full bridge driver
-#define INA1_PIN 8
-#define INA2_PIN 9
-#define INB1_PIN 10
-#define INB2_PIN 11 
+#define INA1_PIN 10 
+#define INA2_PIN 11
+#define INB1_PIN 12
+#define INB2_PIN 13 
 //encoder input
 #define AP_PIN A0 
 #define AN_PIN A1 
@@ -20,7 +22,6 @@
 #define STAT_C (0<<3|1<<2|1<<1|0<<0)
 #define STAT_D (0<<3|1<<2|0<<1|1<<0)
 
-int pin_ovf_led = 13;
 uint8_t ap,an,bp,bn;
 uint8_t current;
 uint8_t previous;
@@ -28,18 +29,21 @@ long counter;
 uint8_t dir;
 uint8_t stepper_state;
 
+long t_count;
+
 void setup(){
 	counter=0;
-	pinMode(pin_ovf_led, OUTPUT);
-	digitalWrite(pin_ovf_led, LOW);
+  t_count=0;
 	setupTimer();
 
 	pinMode(INA1_PIN,OUTPUT);
 	pinMode(INA2_PIN,OUTPUT);
 	pinMode(INB1_PIN,OUTPUT);
 	pinMode(INB2_PIN,OUTPUT);
+
   pinMode(STP_PIN,INPUT);
   pinMode(DIR_PIN,INPUT);
+
 	pinMode(AP_PIN,INPUT);
 	pinMode(AN_PIN,INPUT);
 	pinMode(BP_PIN,INPUT);
@@ -52,20 +56,26 @@ void setup(){
 	SerialUSB.println("init done.");
 	updateEncoder();
 	previous = ap<<3|an<<2|bp<<1|bn<<0; 	
+
+  digitalWrite(INA1_PIN,LOW);
+  digitalWrite(INA2_PIN,LOW);
+  digitalWrite(INB1_PIN,LOW);
+  digitalWrite(INB2_PIN,LOW);
+
 }
 
 void loop(){
-	delay(1000);
-	printCounter();
+	// delay(1000);
+	// printCounter();
 }
 
 void trigStep(){
   updateState();
   if (sin_a[stepper_state]>0){
-    analogWrite(INA1_PIN,sin_a[stepper_state]);
+    analogWrite(INA1_PIN,fabs(sin_a[stepper_state]));
     analogWrite(INA2_PIN,LOW);
     if(sin_b[stepper_state]>0){
-      analogWrite(INB1_PIN,sin_b[stepper_state]);
+      analogWrite(INB1_PIN,fabs(sin_b[stepper_state]));
       analogWrite(INB2_PIN,LOW);
     }else if(sin_b[stepper_state]<0){
       analogWrite(INB1_PIN,LOW);
@@ -75,12 +85,17 @@ void trigStep(){
     analogWrite(INA1_PIN,LOW);
     analogWrite(INA2_PIN,fabs(sin_a[stepper_state]));
     if(sin_b[stepper_state]>0){
-      analogWrite(INB1_PIN,sin_b[stepper_state]);
+      analogWrite(INB1_PIN,fabs(sin_b[stepper_state]));
       analogWrite(INB2_PIN,LOW);
     }else if(sin_b[stepper_state]<0){
       analogWrite(INB1_PIN,LOW);
       analogWrite(INB2_PIN,fabs(sin_b[stepper_state]));
     }
+  }
+
+  t_count++;
+  if(t_count%1000==0){
+    SerialUSB.println("step triggered 1000 times");
   }
 }
 
@@ -147,6 +162,9 @@ void decodeEncoder(){
     	} else if(previous == STAT_A){
     		counter--;
     	}
+    }
+    if((current!=previous)&&counter%100==50){
+      printCounter();
     }
     previous = current;
 }
