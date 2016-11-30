@@ -16,6 +16,11 @@
 #define AN_PIN A1 
 #define BP_PIN A2
 #define BN_PIN A3
+//for Papilio DUO
+/* #define AP_PIN 4 */
+/* #define AN_PIN 5 */
+/* #define BP_PIN 6 */
+/* #define BN_PIN 7 */
 //define state
 #define STAT_A (1<<3|0<<2|0<<1|1<<0)
 #define STAT_B (1<<3|0<<2|1<<1|0<<0)
